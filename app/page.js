@@ -65,6 +65,12 @@ export default function Home() {
   const presetRaces = ['İnsan', 'Elf', 'Cüce', 'Ork', 'Buçukluk', 'Ejderdoğan'];
   const presetClasses = ['Savaşçı', 'Büyücü', 'Ranger (Avcı)', 'Rogue (Hırsız)', 'Ruhban', 'Özel Sınıf Oluştur...'];
 
+  // Yedek Avatar Üreteci (Görsel kırılırsa otomatik devreye girer)
+  const getFallbackAvatar = (name) => {
+    const seed = encodeURIComponent(name || 'hero');
+    return `https://api.dicebear.com/7.x/adventurer/svg?seed=${seed}&backgroundColor=0b0914`;
+  };
+
   const handleClassChange = (e) => {
     const val = e.target.value;
     if (val === 'Özel Sınıf Oluştur...') {
@@ -102,12 +108,16 @@ export default function Home() {
       const res = await fetch('/api/character/avatar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: `${character.race} ${character.className}, ${character.appearance}, full body dnd rpg concept art` })
+        body: JSON.stringify({ prompt: `${character.race} ${character.className}, ${character.appearance}, full body fantasy rpg concept art` })
       });
       const data = await res.json();
-      if (data.imageUrl) setCharacter({ ...character, avatarUrl: data.imageUrl });
+      if (data.imageUrl) {
+        setCharacter({ ...character, avatarUrl: data.imageUrl });
+      } else {
+        setCharacter({ ...character, avatarUrl: getFallbackAvatar(character.name) });
+      }
     } catch (err) {
-      alert("Görsel üretilirken bir hata oluştu.");
+      setCharacter({ ...character, avatarUrl: getFallbackAvatar(character.name) });
     } finally {
       setLoadingImage(false);
     }
@@ -176,13 +186,12 @@ export default function Home() {
           {/* SOL PANEL: SILKROAD EKİPMAN & İSTETİSTİK EKRANI */}
           <div style={{ background: '#121018', border: '2px solid #3b2e23', borderRadius: '12px', padding: '18px', boxShadow: '0 8px 24px rgba(0,0,0,0.8)' }}>
             
-            {/* Karakter Başlığı */}
             <div style={{ textAlign: 'center', borderBottom: '1px solid #2e241b', paddingBottom: '10px', marginBottom: '15px' }}>
               <h2 style={{ margin: 0, color: '#f0c040', fontSize: '1.4rem', textShadow: '0 2px 4px #000' }}>{character.name}</h2>
               <p style={{ margin: '4px 0 0 0', fontSize: '0.85rem', color: '#a09484' }}>Lv. 1 • {character.race} • {character.className}</p>
             </div>
 
-            {/* Can (HP) & Mana (MP) Barı */}
+            {/* HP & MP Barı */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '15px' }}>
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', marginBottom: '3px' }}>
@@ -204,7 +213,7 @@ export default function Home() {
               </div>
             </div>
 
-            {/* SILKROAD USULÜ ORTADA KARAKTER SILUETI VE SAĞ/SOL SLOTLAR */}
+            {/* SILKROAD ORTADAKİ KARAKTER SILUETİ VE SLOTLAR */}
             <div style={{ position: 'relative', width: '100%', height: '270px', background: '#08070a', border: '2px inset #2a2018', borderRadius: '8px', overflow: 'hidden', padding: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
               
               {/* SOL EKİPMAN SÜTUNU */}
@@ -231,10 +240,18 @@ export default function Home() {
                 ))}
               </div>
 
-              {/* ORTADAKİ KARAKTER SILUETİ / GÖRSELİ */}
+              {/* ORTADAKİ KARAKTER GÖRSELİ */}
               <div style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', top: '10px', bottom: '10px', width: '190px', border: '1px solid #3a2e24', borderRadius: '6px', overflow: 'hidden', background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 {character.avatarUrl ? (
-                  <img src={character.avatarUrl} alt="Karakter Görseli" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <img 
+                    src={character.avatarUrl} 
+                    alt="Karakter Görseli" 
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.src = getFallbackAvatar(character.name);
+                    }}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                  />
                 ) : (
                   <div style={{ textAlign: 'center', opacity: 0.25, padding: '10px' }}>
                     <ImageIcon size={64} />
@@ -292,7 +309,6 @@ export default function Home() {
           {/* SAĞ PANEL: DM HİKAYE EKRANI & SEKMELİ ALT PANEL */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
             
-            {/* OYUN METİN ALANI */}
             <div style={{ background: '#121018', border: '2px solid #3b2e23', borderRadius: '12px', padding: '20px', minHeight: '220px', boxShadow: '0 8px 24px rgba(0,0,0,0.8)' }}>
               <h3 style={{ color: '#f0c040', marginTop: 0, display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.2rem' }}>
                 <Scroll size={20} /> Hikaye ve DM Akışı
@@ -305,7 +321,7 @@ export default function Home() {
               </div>
             </div>
 
-            {/* SEKMELER (ENVANTER ÇANTASI / GÖREVLER / İLİŞKİLER) */}
+            {/* SEKMELER */}
             <div style={{ background: '#121018', border: '2px solid #3b2e23', borderRadius: '12px', overflow: 'hidden' }}>
               
               <div style={{ display: 'flex', background: '#09080d', borderBottom: '2px solid #2e241b' }}>
@@ -330,7 +346,6 @@ export default function Home() {
               </div>
 
               <div style={{ padding: '18px' }}>
-                {/* 1. SILKROAD STYLE GRID ÇANTA */}
                 {activeTab === 'inventory' && (
                   <div>
                     <p style={{ fontSize: '0.8rem', color: '#887c6e', marginTop: 0 }}>Giyebileceğin eşyalara tıklayarak karakterin üzerine takabilirsin.</p>
@@ -360,7 +375,6 @@ export default function Home() {
                   </div>
                 )}
 
-                {/* 2. GÖREV LOGU */}
                 {activeTab === 'quests' && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                     {quests.map(q => (
@@ -375,7 +389,6 @@ export default function Home() {
                   </div>
                 )}
 
-                {/* 3. İLİŞKİLER */}
                 {activeTab === 'relations' && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                     {relations.map((rel, idx) => (
@@ -502,7 +515,15 @@ export default function Home() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', alignItems: 'center' }}>
             <div style={{ width: '100%', height: '260px', background: '#09080d', border: '2px dashed #3b2e23', borderRadius: '8px', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               {character.avatarUrl ? (
-                <img src={character.avatarUrl} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <img 
+                  src={character.avatarUrl} 
+                  alt="Avatar" 
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = getFallbackAvatar(character.name);
+                  }}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                />
               ) : (
                 <div style={{ textAlign: 'center', color: '#555', padding: '10px' }}>
                   <ImageIcon size={48} style={{ marginBottom: '10px' }} />
