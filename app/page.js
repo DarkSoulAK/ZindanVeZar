@@ -6,14 +6,13 @@ import {
 } from 'lucide-react';
 
 export default function Home() {
-  const [step, setStep] = useState('creation'); // 'creation' veya 'game'
+  const [step, setStep] = useState('creation');
   const [loadingAi, setLoadingAi] = useState(false);
   const [loadingImage, setLoadingImage] = useState(false);
   const [customClassMode, setCustomClassMode] = useState(false);
   
   const [activeTab, setActiveTab] = useState('inventory');
 
-  // Karakter Durumu (State)
   const [character, setCharacter] = useState({
     name: '',
     race: 'İnsan',
@@ -25,19 +24,17 @@ export default function Home() {
     stats: { str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10 }
   });
 
-  // Silkroad Usulü Ekipman Slotları
   const [equipped, setEquipped] = useState({
-    head: null,      // Kafa
-    body: null,      // Gövde Zırhı
-    legs: null,      // Pantolon/Bacak
-    boots: null,     // Çizme
-    mainHand: null,  // Ana Silah
-    offHand: null,   // Sol El / Kalkan
-    ring: null,      // Yüzük
-    necklace: null,  // Kolye
+    head: null,
+    body: null,
+    legs: null,
+    boots: null,
+    mainHand: null,
+    offHand: null,
+    ring: null,
+    necklace: null,
   });
 
-  // Grid Envanter (16 Slot)
   const [inventory, setInventory] = useState([
     { id: 1, name: "Paslı Kılıç", type: "mainHand", icon: "⚔️", bonus: { str: 3 }, description: "Klasik başlangıç kılıcı. (+3 STR)" },
     { id: 2, name: "Ahşap Kalkan", type: "offHand", icon: "🛡️", bonus: { con: 2 }, description: "Darbelere karşı basit koruma. (+2 CON)" },
@@ -49,14 +46,12 @@ export default function Home() {
     null, null, null, null, null, null, null, null, null
   ]);
 
-  // Görevler
-  const [quests, setQuests] = useState([
+  const [quests] = useState([
     { id: 1, title: "Lonca Başkanının Çağrısı", status: "Aktif", desc: "Maceracılar lonca başkanı ile görüşüp ilk görevini al." },
     { id: 2, title: "Zindanın Gizemi", status: "Kilitli", desc: "Eski zindan kapısını bul ve içeriye girmeyi dene." }
   ]);
 
-  // İlişkiler
-  const [relations, setRelations] = useState([
+  const [relations] = useState([
     { name: "Maceracılar Loncası", status: "Dostça", level: 65, color: "#4CAF50" },
     { name: "Tavernacı Greg", status: "Nötr", level: 50, color: "#FFC107" },
     { name: "Kızıl El Kardeşliği", status: "Düşman", level: 10, color: "#F44336" }
@@ -65,10 +60,8 @@ export default function Home() {
   const presetRaces = ['İnsan', 'Elf', 'Cüce', 'Ork', 'Buçukluk', 'Ejderdoğan'];
   const presetClasses = ['Savaşçı', 'Büyücü', 'Ranger (Avcı)', 'Rogue (Hırsız)', 'Ruhban', 'Özel Sınıf Oluştur...'];
 
-  // Yedek Avatar Üreteci (Görsel kırılırsa otomatik devreye girer)
-  const getFallbackAvatar = (name) => {
-    const seed = encodeURIComponent(name || 'hero');
-    return `https://api.dicebear.com/7.x/adventurer/svg?seed=${seed}&backgroundColor=0b0914`;
+  const getFallbackAvatar = () => {
+    return `https://picsum.photos/seed/${Math.floor(Math.random() * 500)}/512/512`;
   };
 
   const handleClassChange = (e) => {
@@ -92,52 +85,44 @@ export default function Home() {
         setCustomClassMode(!presetClasses.includes(data.character.className));
       }
     } catch (err) {
-      alert("AI Karakter oluştururken bir hata oluştu.");
+      alert("AI Karakter oluşturulurken hata oluştu, varsayılan yüklendi.");
     } finally {
       setLoadingAi(false);
     }
   };
 
   const generateAvatar = async () => {
-    if (!character.appearance) {
-      alert("Lütfen önce karakterin dış görünüşünü tanımla!");
-      return;
-    }
+    setLoadingImage(true);
     try {
-      setLoadingImage(true);
       const res = await fetch('/api/character/avatar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: `${character.race} ${character.className}, ${character.appearance}, full body fantasy rpg concept art` })
+        body: JSON.stringify({ prompt: character.appearance || "warrior rpg character" })
       });
       const data = await res.json();
       if (data.imageUrl) {
-        setCharacter({ ...character, avatarUrl: data.imageUrl });
+        setCharacter(prev => ({ ...prev, avatarUrl: data.imageUrl }));
       } else {
-        setCharacter({ ...character, avatarUrl: getFallbackAvatar(character.name) });
+        setCharacter(prev => ({ ...prev, avatarUrl: getFallbackAvatar() }));
       }
     } catch (err) {
-      setCharacter({ ...character, avatarUrl: getFallbackAvatar(character.name) });
+      setCharacter(prev => ({ ...prev, avatarUrl: getFallbackAvatar() }));
     } finally {
       setLoadingImage(false);
     }
   };
 
-  // Eşya Giyme
   const equipItem = (item, inventoryIndex) => {
     if (!item || item.type === 'consumable') return;
-
     const targetSlot = item.type;
     const currentlyEquipped = equipped[targetSlot];
 
     const newInventory = [...inventory];
     newInventory[inventoryIndex] = currentlyEquipped;
     setInventory(newInventory);
-
     setEquipped({ ...equipped, [targetSlot]: item });
   };
 
-  // Eşya Çıkarma
   const unequipItem = (slotName) => {
     const itemToUnequip = equipped[slotName];
     if (!itemToUnequip) return;
@@ -151,7 +136,6 @@ export default function Home() {
     const newInventory = [...inventory];
     newInventory[emptySlotIndex] = itemToUnequip;
     setInventory(newInventory);
-
     setEquipped({ ...equipped, [slotName]: null });
   };
 
@@ -177,13 +161,11 @@ export default function Home() {
     setStep('game');
   };
 
-  // ==================== SILKROAD STYLE OYUN EKRANI (FAZ 2) ====================
   if (step === 'game') {
     return (
       <div style={{ background: '#09080d', color: '#e0d8c3', minHeight: '100vh', padding: '20px', fontFamily: 'Georgia, serif' }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'grid', gridTemplateColumns: '440px 1fr', gap: '20px' }}>
           
-          {/* SOL PANEL: SILKROAD EKİPMAN & İSTETİSTİK EKRANI */}
           <div style={{ background: '#121018', border: '2px solid #3b2e23', borderRadius: '12px', padding: '18px', boxShadow: '0 8px 24px rgba(0,0,0,0.8)' }}>
             
             <div style={{ textAlign: 'center', borderBottom: '1px solid #2e241b', paddingBottom: '10px', marginBottom: '15px' }}>
@@ -191,7 +173,6 @@ export default function Home() {
               <p style={{ margin: '4px 0 0 0', fontSize: '0.85rem', color: '#a09484' }}>Lv. 1 • {character.race} • {character.className}</p>
             </div>
 
-            {/* HP & MP Barı */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '15px' }}>
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', marginBottom: '3px' }}>
@@ -213,10 +194,8 @@ export default function Home() {
               </div>
             </div>
 
-            {/* SILKROAD ORTADAKİ KARAKTER SILUETİ VE SLOTLAR */}
             <div style={{ position: 'relative', width: '100%', height: '270px', background: '#08070a', border: '2px inset #2a2018', borderRadius: '8px', overflow: 'hidden', padding: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
               
-              {/* SOL EKİPMAN SÜTUNU */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', zIndex: 2 }}>
                 {[
                   { key: 'head', label: 'Miğfer', defaultIcon: '🪖' },
@@ -232,7 +211,7 @@ export default function Home() {
                       width: '46px', height: '46px', background: equipped[slot.key] ? '#1a1622' : 'rgba(0,0,0,0.6)',
                       border: equipped[slot.key] ? '2px solid #f0c040' : '1px solid #443528',
                       borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      cursor: equipped[slot.key] ? 'pointer' : 'default', fontSize: '1.4rem', boxShadow: equipped[slot.key] ? '0 0 8px rgba(240,192,64,0.3)' : 'none'
+                      cursor: equipped[slot.key] ? 'pointer' : 'default', fontSize: '1.4rem'
                     }}
                   >
                     {equipped[slot.key] ? equipped[slot.key].icon : <span style={{ opacity: 0.2, fontSize: '1rem' }}>{slot.defaultIcon}</span>}
@@ -240,7 +219,6 @@ export default function Home() {
                 ))}
               </div>
 
-              {/* ORTADAKİ KARAKTER GÖRSELİ */}
               <div style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', top: '10px', bottom: '10px', width: '190px', border: '1px solid #3a2e24', borderRadius: '6px', overflow: 'hidden', background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 {character.avatarUrl ? (
                   <img 
@@ -248,7 +226,7 @@ export default function Home() {
                     alt="Karakter Görseli" 
                     onError={(e) => {
                       e.target.onerror = null;
-                      e.target.src = getFallbackAvatar(character.name);
+                      e.target.src = "https://picsum.photos/id/1062/512/512";
                     }}
                     style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
                   />
@@ -260,7 +238,6 @@ export default function Home() {
                 )}
               </div>
 
-              {/* SAĞ EKİPMAN SÜTUNU */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', zIndex: 2 }}>
                 {[
                   { key: 'mainHand', label: 'Silah', defaultIcon: '⚔️' },
@@ -276,7 +253,7 @@ export default function Home() {
                       width: '46px', height: '46px', background: equipped[slot.key] ? '#1a1622' : 'rgba(0,0,0,0.6)',
                       border: equipped[slot.key] ? '2px solid #f0c040' : '1px solid #443528',
                       borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      cursor: equipped[slot.key] ? 'pointer' : 'default', fontSize: '1.4rem', boxShadow: equipped[slot.key] ? '0 0 8px rgba(240,192,64,0.3)' : 'none'
+                      cursor: equipped[slot.key] ? 'pointer' : 'default', fontSize: '1.4rem'
                     }}
                   >
                     {equipped[slot.key] ? equipped[slot.key].icon : <span style={{ opacity: 0.2, fontSize: '1rem' }}>{slot.defaultIcon}</span>}
@@ -286,7 +263,6 @@ export default function Home() {
 
             </div>
 
-            {/* İSTATİSTİKLER TABLOSU */}
             <div style={{ background: '#0a090e', border: '1px solid #2a2018', borderRadius: '6px', padding: '10px', marginBottom: '15px' }}>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px', fontSize: '0.8rem', textAlign: 'center' }}>
                 <div style={{ background: '#14111b', padding: '4px', borderRadius: '4px' }}>STR: <b style={{ color: '#f0c040' }}>{calculatedStats.str}</b></div>
@@ -306,7 +282,6 @@ export default function Home() {
             </button>
           </div>
 
-          {/* SAĞ PANEL: DM HİKAYE EKRANI & SEKMELİ ALT PANEL */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
             
             <div style={{ background: '#121018', border: '2px solid #3b2e23', borderRadius: '12px', padding: '20px', minHeight: '220px', boxShadow: '0 8px 24px rgba(0,0,0,0.8)' }}>
@@ -316,14 +291,9 @@ export default function Home() {
               <p style={{ color: '#d0c4b4', lineHeight: '1.6', fontSize: '0.95rem' }}>
                 <i>"Maceracılar loncasının meşalelerle aydınlatılmış kasvetli salonunda duruyorsun. Lonca başkanı masasında duran eski haritayı inceledikten sonra başını kaldırıp sana bakıyor: '{character.name}, aldığımız haberlere göre kuzeydeki zindanda garip olaylar dönüyor. Ekipmanlarını kuşan ve oraya hareket et...'"</i>
               </p>
-              <div style={{ marginTop: '15px', padding: '10px', background: '#0a090e', borderLeft: '3px solid #f0c040', fontSize: '0.85rem', color: '#998d7d' }}>
-                💡 <b>Faz 3 Entegrasyonu:</b> Zarlar, DC zorluk sınıfları ve dinamik yapay zeka seçenekleri bir sonraki fazda buraya eklenecektir.
-              </div>
             </div>
 
-            {/* SEKMELER */}
             <div style={{ background: '#121018', border: '2px solid #3b2e23', borderRadius: '12px', overflow: 'hidden' }}>
-              
               <div style={{ display: 'flex', background: '#09080d', borderBottom: '2px solid #2e241b' }}>
                 <button 
                   onClick={() => setActiveTab('inventory')}
@@ -358,7 +328,7 @@ export default function Home() {
                           style={{
                             height: '65px', background: '#09080d', border: item ? '1px solid #f0c040' : '1px solid #2a2018',
                             borderRadius: '6px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                            cursor: item ? 'pointer' : 'default', position: 'relative', boxShadow: item ? 'inset 0 0 6px rgba(240,192,64,0.1)' : 'none'
+                            cursor: item ? 'pointer' : 'default'
                           }}
                         >
                           {item ? (
@@ -415,7 +385,6 @@ export default function Home() {
     );
   }
 
-  // ==================== KARAKTER OLUŞTURMA EKRANI (FAZ 1) ====================
   return (
     <div style={{ background: '#09080d', color: '#e0d8c3', minHeight: '100vh', padding: '30px', fontFamily: 'Georgia, serif' }}>
       <div style={{ maxWidth: '900px', margin: '0 auto', background: '#121018', border: '2px solid #3b2e23', borderRadius: '12px', padding: '25px', boxShadow: '0 8px 24px rgba(0,0,0,0.8)' }}>
@@ -520,7 +489,7 @@ export default function Home() {
                   alt="Avatar" 
                   onError={(e) => {
                     e.target.onerror = null;
-                    e.target.src = getFallbackAvatar(character.name);
+                    e.target.src = "https://picsum.photos/id/1062/512/512";
                   }}
                   style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
                 />
