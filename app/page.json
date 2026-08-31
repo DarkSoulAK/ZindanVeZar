@@ -40,14 +40,16 @@ export default function Home() {
         ))}
         {loading && <p style={{ color: '#888' }}>DM düşünüyor ve zar atıyor...</p>}
       </div>
-      <input 
-        value={input} 
-        onChange={(e) => setInput(e.target.value)} 
-        onKeyDown={(e) => e.key === 'Enter' && sendAction()}
-        placeholder="Hamleni yaz (Örn: Kapıyı zorlayıp içeri giriyorum)" 
-        style={{ width: '80%', padding: 12, background: '#1e1e24', color: '#fff', border: '1px solid #444' }}
-      />
-      <button onClick={sendAction} style={{ padding: '12px 20px', background: '#f1c40f', border: 'none', fontWeight: 'bold', cursor: 'pointer', marginLeft: 10 }}>Gönder</button>
+      <div>
+        <input
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && sendAction()}
+          placeholder="Hamleni yaz (Örn: Kapıyı zorlayıp içeri giriyorum)"
+          style={{ width: '80%', padding: 12, background: '#1e1e24', color: '#fff', border: '1px solid #444' }}
+        />
+        <button onClick={sendAction} style={{ padding: '12px 20px', background: '#f1c40f', border: 'none', fontWeight: 'bold', cursor: 'pointer', marginLeft: 10 }}>Gönder</button>
+      </div>
     </div>
   );
 }
